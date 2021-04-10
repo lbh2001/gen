@@ -130,6 +130,7 @@ func (r *router) handle(c *Context) {
 /****************************/
 func getTest() *router {
 	r := newRouter()
+	r.addRoute("GET", "/home", nil)
 
 	return r
 }
