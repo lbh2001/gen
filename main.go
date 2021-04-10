@@ -14,7 +14,6 @@ import (
 func main() {
 
 	r := gen.New()
-
 	r.GET("/login", func(c *gen.Context) {
 		username := c.PostForm("username")
 		password := c.PostForm("password")
