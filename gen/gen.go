@@ -1,7 +1,6 @@
 package gen
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -11,21 +10,20 @@ import (
  * @Description: "gen is a framework analogous to gin"
  */
 
-type HandlerFunc func(http.ResponseWriter, *http.Request)
+type HandlerFunc func(c *Context)
 
 type Engine struct {
-	router map[string]HandlerFunc
+	router *router
 }
 
 //new Engine
 func New() *Engine {
-	return &Engine{router: make(map[string]HandlerFunc)}
+	return &Engine{router: newRouter()}
 }
 
-//添加路由
+//向路由表中添加路由
 func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
-	key := method + "-" + pattern
-	engine.router[key] = handler
+	engine.router.addRoute(method, pattern, handler)
 }
 
 //GET方式添加路由
@@ -38,17 +36,14 @@ func (engine *Engine) POST(pattern string, handler HandlerFunc) {
 	engine.addRoute("POST", pattern, handler)
 }
 
+//实现ServeHTTP接口
+//接管HTTP请求
+func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	c := newContext(w, req)
+	engine.router.handle(c)
+}
+
 //run
 func (engine *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, engine)
-}
-
-//Engine实现ServeHTTP接口
-func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	key := req.Method + "-" + req.URL.Path
-	if handler, ok := engine.router[key]; ok {
-		handler(w, req)
-	} else {
-		fmt.Fprintf(w, "404 Not Found: %q", req.URL)
-	}
 }
