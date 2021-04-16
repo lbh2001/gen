@@ -12,8 +12,17 @@ import (
 
 type HandlerFunc func(c *Context)
 
+// Engine struct
 type Engine struct {
+	*RouteGroup
 	router *router
+	groups []*RouteGroup
+}
+
+type RouteGroup struct {
+	prefix     string        //前缀
+	middleware []HandlerFunc //中间件
+	engine     *Engine       //所属Engine
 }
 
 //new Engine
