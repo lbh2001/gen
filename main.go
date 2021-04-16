@@ -1,6 +1,9 @@
 package main
 
-import "gen/gen"
+import (
+	"gen/gen"
+	"net/http"
+)
 
 /**
  * @Author: lbh
@@ -10,7 +13,18 @@ import "gen/gen"
 
 func main() {
 
-	r := gen.GetTest()
+	r := gen.New()
+
+	g1 := r.Group("/group1")
+	{
+		g1.GET("/testGroup", func(c *gen.Context) {
+			c.JSON(http.StatusOK, gen.H{
+				"url":    c.Request.URL.Path,
+				"status": "success",
+			})
+		})
+	}
+
 	r.Run(":9999")
 	//
 	//str1 := "/1/2/3"

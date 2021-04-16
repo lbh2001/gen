@@ -19,6 +19,7 @@ type Engine struct {
 	groups []*RouteGroup
 }
 
+// RouteGroup struct
 type RouteGroup struct {
 	prefix     string        //前缀
 	middleware []HandlerFunc //中间件
@@ -27,22 +28,37 @@ type RouteGroup struct {
 
 //new Engine
 func New() *Engine {
-	return &Engine{router: newRouter()}
+	engine := &Engine{router: newRouter()}
+	engine.groups = []*RouteGroup{}
+	engine.RouteGroup = &RouteGroup{engine: engine}
+	return engine
+}
+
+// Group is a initiation of a RouteGroup
+func (groups *RouteGroup) Group(prefix string) *RouteGroup {
+	engine := groups.engine
+	newGroup := &RouteGroup{
+		prefix: groups.prefix + prefix,
+		engine: engine,
+	}
+	engine.groups = append(engine.groups, newGroup)
+	return newGroup
 }
 
 //向路由表中添加路由
-func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
-	engine.router.addRoute(method, pattern, handler)
+func (groups *RouteGroup) addRoute(method string, pattern string, handler HandlerFunc) {
+	pattern = groups.prefix + pattern
+	groups.engine.router.addRoute(method, pattern, handler)
 }
 
 //GET方式添加路由
-func (engine *Engine) GET(pattern string, handler HandlerFunc) {
-	engine.addRoute("GET", pattern, handler)
+func (groups *RouteGroup) GET(pattern string, handler HandlerFunc) {
+	groups.addRoute("GET", pattern, handler)
 }
 
 //POST方式添加路由
-func (engine *Engine) POST(pattern string, handler HandlerFunc) {
-	engine.addRoute("POST", pattern, handler)
+func (groups *RouteGroup) POST(pattern string, handler HandlerFunc) {
+	groups.addRoute("POST", pattern, handler)
 }
 
 //实现ServeHTTP接口
