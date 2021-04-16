@@ -11,7 +11,7 @@ import "strings"
 //pattern:	从根结点到该结点的全路径
 //part:		该结点的部分路径
 //children:	孩子结点(们)
-//isWild:	是否精确匹配(part中含有":"或"*"则代表精确匹配)
+//isWild:	是否模糊匹配(part中含有":"或"*"则代表模糊匹配)
 type node struct {
 	pattern  string
 	part     string
@@ -19,37 +19,30 @@ type node struct {
 	isWild   bool
 }
 
-//获取第一个匹配成功的结点
+// 获取第一个匹配成功的结点
 func (n *node) matchChild(part string) *node {
 	for _, child := range n.children {
-		if child.part == part || child.isWild {
+		if child.part == part {
 			return child
+		}
+		if child.isWild || part[0] == '*' || part[0] == ':' {
+			panic("路径冲突：已存在通配路径或普通路径！")
 		}
 	}
 	return nil
 }
 
-//获取孩子结点中 “part” 为 part 的所有结点
-func (n *node) matchChildren(part string) []*node {
-	nodes := make([]*node, 0)
-	for _, child := range n.children {
-		if child.part == part || child.isWild {
-			nodes = append(nodes, child)
-		}
-	}
-	return nodes
-}
-
 //基于结点n开始插入新结点
-func (n *node) insert(pattern string, parts []string, height int) {
+func (n *node) insertChild(pattern string, parts []string, height int) {
 
-	//递归结束条件:遍历到最底层结点
+	//递归结束条件:遍历完最底层结点(遍历完parts)
 	if len(parts) == height {
 		n.pattern = pattern
 		return
 	}
 
 	part := parts[height]
+
 	child := n.matchChild(part)
 
 	//结点n的孩子结点中没有part,则插入
@@ -59,7 +52,18 @@ func (n *node) insert(pattern string, parts []string, height int) {
 	}
 
 	//递归插入
-	child.insert(pattern, parts, height+1)
+	child.insertChild(pattern, parts, height+1)
+}
+
+// 获取孩子结点中 “part” 为 part 的所有结点
+func (n *node) matchChildren(part string) []*node {
+	nodes := make([]*node, 0)
+	for _, child := range n.children {
+		if child.part == part || child.isWild {
+			nodes = append(nodes, child)
+		}
+	}
+	return nodes
 }
 
 //基于结点n开始匹配结点

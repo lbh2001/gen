@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -26,13 +27,13 @@ func newRouter() *router {
 
 //将路径解析保存到切片中
 func parsePattern(pattern string) []string {
-	tempParts := strings.Split(pattern, "/")
+	tempParts := strings.Split(pattern, "/")[1:]
 	parts := make([]string, 0)
 
-	for _, part := range tempParts {
+	for index, part := range tempParts {
 		parts = append(parts, part)
-		if part[0] == '*' {
-			return parts
+		if part[0] == '*' && index != len(tempParts)-1 {
+			panic("在 '*'子路径后不能有其他路径！ ")
 		}
 	}
 	return parts
@@ -46,7 +47,7 @@ func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 		r.roots[method] = &node{}
 	}
 	//添加结点(储存路由)
-	r.roots[method].insert(pattern, parts, 0)
+	r.roots[method].insertChild(pattern, parts, 0)
 
 	//储存路由对应的方法
 	key := method + "-" + pattern
@@ -83,11 +84,11 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 		//储存参数
 		for index, part := range parts {
 			if part[0] == ':' {
-				params[part[1:]] = searchParts[index]
+				params[part] = searchParts[index]
 			}
 			if part[0] == '*' && len(part) > 1 {
 				//若part形如: "*someFilePath" (length > 1)
-				//说明路径为: /.../*someFilePath/...
+				//说明路径为: /.../*someFilePath
 				//那么从这个part开始一直到最后一个part
 				//以"/"作为分隔符拼接成string(与parsePattern相反)
 				//作为params的key
@@ -110,7 +111,11 @@ func (r *router) handle(c *Context) {
 	//查看路由是否已被注册
 	if resultNode != nil {
 		c.Params = params
-		key := c.Request.Method + "-" + c.Request.URL.Path
+		// 请求中传来的真实完整路径
+		realFullPath := resultNode.pattern
+
+		key := c.Request.Method + "-" + realFullPath
+		fmt.Println(key)
 		//执行方法
 		r.handlers[key](c)
 	} else {
@@ -128,9 +133,30 @@ func (r *router) handle(c *Context) {
 /*******               ******/
 /*******  Test Router  ******/
 /****************************/
-func getTest() *router {
-	r := newRouter()
-	r.addRoute("GET", "/home", nil)
-
+func GetTest() *Engine {
+	r := New()
+	r.addRoute("GET", "/:name/*", catchAllHandler)
+	//r.addRoute("GET", "/*", catchAllHandler)
 	return r
+}
+
+func homeHandler(c *Context) {
+	c.JSON(http.StatusOK, H{
+		"status": "ok",
+		"name":   c.Params,
+	})
+}
+
+func nameHandler(c *Context) {
+	c.JSON(http.StatusOK, H{
+		"status": "ok",
+		"page":   c.Request.URL.Path[1:] + "'s homePage",
+	})
+}
+
+func catchAllHandler(c *Context) {
+	c.JSON(http.StatusOK, H{
+		"status": "ok",
+		"name":   "this is a catchAll path handler",
+	})
 }
