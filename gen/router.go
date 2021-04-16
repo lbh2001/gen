@@ -31,6 +31,18 @@ func parsePattern(pattern string) []string {
 	parts := make([]string, 0)
 
 	for index, part := range tempParts {
+
+		// 尾随斜杠重定向
+		// 其将形如 /user/name/ 的路径
+		// 重定向到 /user/name
+		if len(part) == 0 {
+			if index == len(tempParts)-1 {
+				break
+			} else {
+				panic("路径解析错误：子路径不能为空！")
+			}
+		}
+
 		parts = append(parts, part)
 		if part[0] == '*' && index != len(tempParts)-1 {
 			panic("在 '*'子路径后不能有其他路径！ ")
@@ -135,7 +147,8 @@ func (r *router) handle(c *Context) {
 /****************************/
 func GetTest() *Engine {
 	r := New()
-	r.addRoute("GET", "/:name/*", catchAllHandler)
+	r.addRoute("GET", "/name/", catchAllHandler)
+	r.addRoute("GET", "/name", catchAllHandler)
 	//r.addRoute("GET", "/*", catchAllHandler)
 	return r
 }

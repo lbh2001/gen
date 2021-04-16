@@ -37,8 +37,16 @@ func (n *node) insertChild(pattern string, parts []string, height int) {
 
 	//递归结束条件:遍历完最底层结点(遍历完parts)
 	if len(parts) == height {
-		n.pattern = pattern
-		return
+		// 尾随斜杠重定向
+		if pattern[len(pattern)-1] == '/' {
+			pattern = pattern[:len(pattern)-1]
+		}
+		if n.pattern == pattern {
+			panic("已存在该路由！")
+		} else {
+			n.pattern = pattern
+			return
+		}
 	}
 
 	part := parts[height]
