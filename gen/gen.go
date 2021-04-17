@@ -26,15 +26,15 @@ type RouteGroup struct {
 	engine     *Engine       //所属Engine
 }
 
-//new Engine
+// new Engine
 func New() *Engine {
 	engine := &Engine{router: newRouter()}
-	engine.groups = []*RouteGroup{}
 	engine.RouteGroup = &RouteGroup{engine: engine}
+	engine.groups = []*RouteGroup{engine.RouteGroup}
 	return engine
 }
 
-// Group is a initiation of a RouteGroup
+// func Group is a initiation of a RouteGroup
 func (groups *RouteGroup) Group(prefix string) *RouteGroup {
 	engine := groups.engine
 	newGroup := &RouteGroup{
