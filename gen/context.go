@@ -22,14 +22,18 @@ type Context struct {
 	Path       string            //请求路径
 	Params     map[string]string //解析后的参数
 	StatusCode int               //状态码
+	handlers   []HandlerFunc     //所有中间件
+	index      int               //当前中间件下标
 }
 
+// new Context
 func newContext(w http.ResponseWriter, req *http.Request) *Context {
 	return &Context{
 		Writer:  w,
 		Request: req,
 		Method:  req.Method,
 		Path:    req.URL.Path,
+		index:   -1,
 	}
 }
 
@@ -89,4 +93,14 @@ func (c *Context) HTML(code int, html string) {
 	c.SetHeader("Content-type", "text/html")
 	c.Status(code)
 	c.Writer.Write([]byte(html))
+}
+
+// 执行后面的中间件
+func (c *Context) Next() {
+	c.index++
+	s := len(c.handlers)
+	// 从下一个中间件开始 依次往后执行
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
+	}
 }

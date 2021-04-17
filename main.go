@@ -1,8 +1,8 @@
 package main
 
 import (
-	"gen/gen"
-	"net/http"
+	"github.com/lbh2001/gen/gen"
+	"time"
 )
 
 /**
@@ -14,16 +14,14 @@ import (
 func main() {
 
 	r := gen.New()
+	r.Use(gen.Logger())
 
-	g1 := r.Group("/group1")
-	{
-		g1.GET("/testGroup", func(c *gen.Context) {
-			c.JSON(http.StatusOK, gen.H{
-				"url":    c.Request.URL.Path,
-				"status": "success",
-			})
-		})
-	}
+	g1 := r.Group("/zz")
+
+	g1.GET("/t1", func(c *gen.Context) {
+		time.Sleep(time.Duration(2) * time.Second)
+	})
+
 	r.Run(":9999")
 	//
 	//str1 := "/1/2/3"

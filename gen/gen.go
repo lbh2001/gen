@@ -1,7 +1,9 @@
 package gen
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 )
 
 /**
@@ -21,9 +23,9 @@ type Engine struct {
 
 // RouteGroup struct
 type RouteGroup struct {
-	prefix     string        //前缀
-	middleware []HandlerFunc //中间件
-	engine     *Engine       //所属Engine
+	prefix      string        //前缀
+	middlewares []HandlerFunc //中间件
+	engine      *Engine       //所属Engine
 }
 
 // new Engine
@@ -41,6 +43,13 @@ func (groups *RouteGroup) Group(prefix string) *RouteGroup {
 		prefix: groups.prefix + prefix,
 		engine: engine,
 	}
+	// 路由组不能重复(路径唯一性)
+	for _, group := range engine.groups {
+		if group.prefix == newGroup.prefix {
+			panic(fmt.Sprintf("路由组 \"%v\" 已存在！", group.prefix))
+		}
+	}
+
 	engine.groups = append(engine.groups, newGroup)
 	return newGroup
 }
@@ -61,14 +70,27 @@ func (groups *RouteGroup) POST(pattern string, handler HandlerFunc) {
 	groups.addRoute("POST", pattern, handler)
 }
 
-//实现ServeHTTP接口
-//接管HTTP请求
+// Add middleware
+func (groups *RouteGroup) Use(middlewares ...HandlerFunc) {
+	groups.middlewares = append(groups.middlewares, middlewares...)
+}
+
+// 实现ServeHTTP接口
+// 接管所有HTTP请求
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var middlewares []HandlerFunc
+	// 添加要执行的中间件
+	for _, group := range engine.groups {
+		if strings.HasPrefix(req.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
 	c := newContext(w, req)
+	c.handlers = middlewares
 	engine.router.handle(c)
 }
 
-//run
+// Run it
 func (engine *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, engine)
 }

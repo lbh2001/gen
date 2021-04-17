@@ -27,6 +27,9 @@ func newRouter() *router {
 
 //将路径解析保存到切片中
 func parsePattern(pattern string) []string {
+	if pattern[0] != '/' {
+		panic("路径必须以 '/' 开头！")
+	}
 	tempParts := strings.Split(pattern, "/")[1:]
 	parts := make([]string, 0)
 
@@ -63,6 +66,7 @@ func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 
 	//储存路由对应的方法
 	key := method + "-" + pattern
+	fmt.Println("Registered Route: " + key)
 	r.handlers[key] = handler
 }
 
@@ -128,16 +132,18 @@ func (r *router) handle(c *Context) {
 
 		key := c.Request.Method + "-" + realFullPath
 		fmt.Println(key)
-		//执行方法
-		r.handlers[key](c)
+		// 添加到handlers中
+		c.handlers = append(c.handlers, r.handlers[key])
 	} else {
-		c.JSON(http.StatusNotFound, H{
-			"status": "404 Not Found",
-			"method": c.Method,
-			"path":   c.Path,
+		c.handlers = append(c.handlers, func(ctx *Context) {
+			ctx.JSON(http.StatusNotFound, H{
+				"status": "404 Not Found",
+				"method": ctx.Method,
+				"path":   ctx.Path,
+			})
 		})
 	}
-
+	c.Next()
 }
 
 /****************************/
