@@ -7,6 +7,6 @@
 
 2. import it
 
-`import "net/http"`(we need `net/http` to support it)
+`import "net/http"` (we need `net/http` to support it)
 
 `import "github.com/lbh2001/gen/gen"`
