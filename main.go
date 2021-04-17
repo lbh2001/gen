@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"github.com/lbh2001/gen/gen"
-	"time"
 )
 
 /**
@@ -14,13 +14,26 @@ import (
 func main() {
 
 	r := gen.New()
+
 	r.Use(gen.Logger())
 
-	g1 := r.Group("/zz")
+	g1 := r.Group("/g1")
+	{
+		g1.GET("/t1", func(c *gen.Context) {
+			fmt.Println("执行路由方法~")
+		})
+	}
 
-	g1.GET("/t1", func(c *gen.Context) {
-		time.Sleep(time.Duration(2) * time.Second)
-	})
+	g2 := r.Group("/g2")
+	{
+		g2.Use(gen.OnlyForGroup2())
+		g2.GET("/t2", func(c *gen.Context) {
+			fmt.Println("/g2/t2")
+		})
+		g2.GET("/z2", func(c *gen.Context) {
+			fmt.Println("/g2/z2")
+		})
+	}
 
 	r.Run(":9999")
 	//

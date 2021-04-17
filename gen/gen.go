@@ -62,11 +62,17 @@ func (groups *RouteGroup) addRoute(method string, pattern string, handler Handle
 
 //GET方式添加路由
 func (groups *RouteGroup) GET(pattern string, handler HandlerFunc) {
+	if !(len(pattern) > 0 && pattern[0] == '/') {
+		panic("路径必须以 '/'开头！")
+	}
 	groups.addRoute("GET", pattern, handler)
 }
 
 //POST方式添加路由
 func (groups *RouteGroup) POST(pattern string, handler HandlerFunc) {
+	if !(len(pattern) > 0 && pattern[0] == '/') {
+		panic("路径必须以 '/'开头！")
+	}
 	groups.addRoute("POST", pattern, handler)
 }
 
