@@ -9,7 +9,7 @@ import (
 /**
  * @Author: lbh
  * @Date: 2021/4/10
- * @Description:
+ * @Description: routers manage HandleFunc of patterns
  */
 
 type router struct {
@@ -56,22 +56,33 @@ func parsePattern(pattern string) []string {
 
 //向路由表中添加路由
 func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
-	parts := parsePattern(pattern)
 	_, ok := r.roots[method]
 	if !ok {
 		r.roots[method] = &node{}
 	}
+
+	key := method + "-" + pattern
+
+	if pattern == "/" {
+		r.roots[method].insertChild(pattern, []string{"/"}, 0)
+		r.handlers[key] = handler
+		fmt.Println("Registered Route: " + key)
+		return
+	}
+	parts := parsePattern(pattern)
 	//添加结点(储存路由)
 	r.roots[method].insertChild(pattern, parts, 0)
 
 	//储存路由对应的方法
-	key := method + "-" + pattern
 	fmt.Println("Registered Route: " + key)
 	r.handlers[key] = handler
 }
 
 //根据方法和路径获取路由、参数
 func (r *router) getRoute(method string, path string) (*node, map[string]string) {
+	if path == "/" || path == "" {
+		return r.roots[method].search([]string{"/"}, 0), nil
+	}
 	searchParts := parsePattern(path)
 	params := make(map[string]string)
 
@@ -129,7 +140,6 @@ func (r *router) handle(c *Context) {
 		c.Params = params
 		// 请求中传来的真实完整路径
 		realFullPath := resultNode.pattern
-
 		key := c.Request.Method + "-" + realFullPath
 		fmt.Println(key)
 		// 添加到handlers中

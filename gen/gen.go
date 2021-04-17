@@ -2,44 +2,62 @@ package gen
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
+	"path"
 	"strings"
 )
 
 /**
  * @Author: lbh
  * @Date: 2021/4/9
- * @Description: "gen is a framework analogous to gin"
+ * @Description: gen is a simplified web framework analogous to gin
  */
 
+// 定义 HandlerFunc
 type HandlerFunc func(c *Context)
 
-// Engine struct
-type Engine struct {
-	*RouteGroup
-	router *router
-	groups []*RouteGroup
-}
+// 定义结构体
+type (
+	// Engine struct
+	Engine struct {
+		*RouterGroup
+		router        *router
+		groups        []*RouterGroup
+		htmlTemplates *template.Template
+		funcMap       template.FuncMap
+	}
 
-// RouteGroup struct
-type RouteGroup struct {
-	prefix      string        //前缀
-	middlewares []HandlerFunc //中间件
-	engine      *Engine       //所属Engine
-}
+	// RouterGroup struct
+	RouterGroup struct {
+		prefix      string        //前缀
+		middlewares []HandlerFunc //中间件
+		engine      *Engine       //所属Engine
+	}
+)
 
 // new Engine
 func New() *Engine {
 	engine := &Engine{router: newRouter()}
-	engine.RouteGroup = &RouteGroup{engine: engine}
-	engine.groups = []*RouteGroup{engine.RouteGroup}
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	engine.groups = []*RouterGroup{engine.RouterGroup}
 	return engine
 }
 
-// func Group is a initiation of a RouteGroup
-func (groups *RouteGroup) Group(prefix string) *RouteGroup {
+// new Engine by a Default way:
+// use Logger() and Recovery()
+func Default() *Engine {
+	engine := New()
+	// 默认使用Logger和Recovery中间件
+	engine.Use(Logger(), Recovery())
+	return engine
+}
+
+// func Group is a initiation of a RouterGroup
+// 初始化一个 RouterGroup
+func (groups *RouterGroup) Group(prefix string) *RouterGroup {
 	engine := groups.engine
-	newGroup := &RouteGroup{
+	newGroup := &RouterGroup{
 		prefix: groups.prefix + prefix,
 		engine: engine,
 	}
@@ -55,13 +73,13 @@ func (groups *RouteGroup) Group(prefix string) *RouteGroup {
 }
 
 //向路由表中添加路由
-func (groups *RouteGroup) addRoute(method string, pattern string, handler HandlerFunc) {
+func (groups *RouterGroup) addRoute(method string, pattern string, handler HandlerFunc) {
 	pattern = groups.prefix + pattern
 	groups.engine.router.addRoute(method, pattern, handler)
 }
 
 //GET方式添加路由
-func (groups *RouteGroup) GET(pattern string, handler HandlerFunc) {
+func (groups *RouterGroup) GET(pattern string, handler HandlerFunc) {
 	if !(len(pattern) > 0 && pattern[0] == '/') {
 		panic("路径必须以 '/'开头！")
 	}
@@ -69,15 +87,15 @@ func (groups *RouteGroup) GET(pattern string, handler HandlerFunc) {
 }
 
 //POST方式添加路由
-func (groups *RouteGroup) POST(pattern string, handler HandlerFunc) {
+func (groups *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	if !(len(pattern) > 0 && pattern[0] == '/') {
 		panic("路径必须以 '/'开头！")
 	}
 	groups.addRoute("POST", pattern, handler)
 }
 
-// Add middleware
-func (groups *RouteGroup) Use(middlewares ...HandlerFunc) {
+// 添加中间件
+func (groups *RouterGroup) Use(middlewares ...HandlerFunc) {
 	groups.middlewares = append(groups.middlewares, middlewares...)
 }
 
@@ -91,12 +109,54 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			middlewares = append(middlewares, group.middlewares...)
 		}
 	}
+	// 实例化Context
 	c := newContext(w, req)
 	c.handlers = middlewares
+	c.engine = engine
 	engine.router.handle(c)
 }
 
 // Run it
 func (engine *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, engine)
+}
+
+/***************************************/
+/************ HTML Template ************/
+/***************************************/
+
+// 解析对静态资源请求的路径
+// 并映射为文件真实路径
+// 然后返回一个对该路径请求的处理函数
+func (groups *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+	// 由相对路径得到绝对路径
+	absolutePath := path.Join(groups.prefix, relativePath)
+	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
+	return func(c *Context) {
+		file := c.Param("filepath")
+		// 检查文件是否存在
+		if _, err := fs.Open(file); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		fileServer.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+// 处理对静态资源访问的请求
+func (groups *RouterGroup) Static(relativePath string, root string) {
+	handler := groups.createStaticHandler(relativePath, http.Dir(root))
+	urlPattern := path.Join(relativePath, "/*filepath")
+	// 注册handler
+	groups.GET(urlPattern, handler)
+}
+
+// 设置 engine.funcMap
+func (engine *Engine) SetFuncMap(funcMap template.FuncMap) {
+	engine.funcMap = funcMap
+}
+
+// 加载HTML
+func (engine *Engine) LoadHTMLGlob(pattern string) {
+	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
 }

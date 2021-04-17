@@ -9,7 +9,7 @@ import (
 /**
  * @Author: lbh
  * @Date: 2021/4/10
- * @Description:
+ * @Description: Context controls all requests and responses
  */
 
 //简化
@@ -24,6 +24,7 @@ type Context struct {
 	StatusCode int               //状态码
 	handlers   []HandlerFunc     //所有中间件
 	index      int               //当前中间件下标
+	engine     *Engine           //engine pointer
 }
 
 // new Context
@@ -35,6 +36,13 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Path:    req.URL.Path,
 		index:   -1,
 	}
+}
+
+// Fail: 若失败了则直接结束，不再调用HandlerFunc
+// 相当于gin里面的 c.Abort()
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.tempHTML(code, fmt.Sprintf("<h1>%s<h1>", err))
 }
 
 //根据key获取解析后的参数
@@ -89,10 +97,19 @@ func (c *Context) Data(code int, data []byte) {
 }
 
 //HTML类型返回信息
-func (c *Context) HTML(code int, html string) {
-	c.SetHeader("Content-type", "text/html")
+func (c *Context) tempHTML(code int, html string) {
+	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
 	c.Writer.Write([]byte(html))
+}
+
+//HTML类型返回信息
+func (c *Context) HTML(code int, name string, data interface{}) {
+	c.SetHeader("Content-type", "text/html")
+	c.Status(code)
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.Fail(500, err.Error())
+	}
 }
 
 // 执行后面的中间件

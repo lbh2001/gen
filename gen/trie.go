@@ -35,6 +35,16 @@ func (n *node) matchChild(part string) *node {
 //基于结点n开始插入新结点
 func (n *node) insertChild(pattern string, parts []string, height int) {
 
+	if pattern == "/" {
+		child := &node{
+			pattern: pattern,
+			isWild:  false,
+			part:    parts[0],
+		}
+		n.children = append(n.children, child)
+		return
+	}
+
 	//递归结束条件:遍历完最底层结点(遍历完parts)
 	if len(parts) == height {
 		// 尾随斜杠重定向
@@ -80,9 +90,9 @@ func (n *node) search(parts []string, height int) *node {
 
 	//递归结束条件
 	if len(parts) == height || strings.HasPrefix(n.part, "*") {
-		if n.pattern == "" {
-			return nil
-		}
+		//if n.pattern == "" {
+		//	return nil
+		//}
 		return n
 	}
 
