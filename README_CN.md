@@ -1,6 +1,6 @@
-<div align='center' ><font size='70'>Gen</font></div>
+<div align='center' ><h1>Gen</h1></div>
 
-<p align="center"><a href="/lbh2001/gen/blob/master/README.md">English</a> | 简体中文</p>
+<p align="center"><a href="https://github.com/lbh2001/gen/blob/master/README.md">English</a> | 简体中文</p>
 
 <p align="center"><a href="https://github.com/lbh2001/gen">Gen</a>是一个类似于<a href="https://github.com/gin-gonic/gin">Gin</a>简化版的web框架。 </p>
 

@@ -1,6 +1,6 @@
-<div align='center' ><font size='70'>Gen</font></div>
+<div align='center' ><h1>Gen</h1></div>
 
-<p align="center">English | <a href="/lbh2001/gen/blob/master/README_CN.md">简体中文</a></p>
+<p align="center">English | <a href="https://github.com/lbh2001/gen/blob/master/README_CN.md">简体中文</a></p>
 
 <p align="center"><a href="https://github.com/lbh2001/gen">Gen</a> is a web framework analogous to a simplified<a href="https://github.com/gin-gonic/gin">Gin</a></p>
 
