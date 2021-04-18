@@ -8,10 +8,10 @@ import "strings"
  * @Description: Trie is a data structure to register and parse/search routers.
  */
 
-//pattern:	从根结点到该结点的全路径
-//part:		该结点的部分路径
-//children:	孩子结点(们)
-//isWild:	是否模糊匹配(part中含有":"或"*"则代表模糊匹配)
+// pattern:	从根结点到该结点的全路径
+// part:		该结点的部分路径
+// children:	孩子结点(们)
+// isWild:	是否模糊匹配(part中含有":"或"*"则代表模糊匹配)
 type node struct {
 	pattern  string
 	part     string
@@ -32,9 +32,10 @@ func (n *node) matchChild(part string) *node {
 	return nil
 }
 
-//基于结点n开始插入新结点
+// 基于结点n开始插入新结点
 func (n *node) insertChild(pattern string, parts []string, height int) {
 
+	// 特殊情况: 如果完整路径是 "/"
 	if pattern == "/" {
 		child := &node{
 			pattern: pattern,
@@ -45,7 +46,7 @@ func (n *node) insertChild(pattern string, parts []string, height int) {
 		return
 	}
 
-	//递归结束条件:遍历完最底层结点(遍历完parts)
+	// 递归结束条件:遍历完最底层结点(遍历完parts)
 	if len(parts) == height {
 		// 尾随斜杠重定向
 		if pattern[len(pattern)-1] == '/' {

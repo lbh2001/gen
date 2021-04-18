@@ -72,13 +72,13 @@ func (groups *RouterGroup) Group(prefix string) *RouterGroup {
 	return newGroup
 }
 
-//向路由表中添加路由
+// 向路由表中添加路由
 func (groups *RouterGroup) addRoute(method string, pattern string, handler HandlerFunc) {
 	pattern = groups.prefix + pattern
 	groups.engine.router.addRoute(method, pattern, handler)
 }
 
-//GET方式添加路由
+// GET方式添加路由
 func (groups *RouterGroup) GET(pattern string, handler HandlerFunc) {
 	if !(len(pattern) > 0 && pattern[0] == '/') {
 		panic("路径必须以 '/'开头！")
@@ -86,7 +86,7 @@ func (groups *RouterGroup) GET(pattern string, handler HandlerFunc) {
 	groups.addRoute("GET", pattern, handler)
 }
 
-//POST方式添加路由
+// POST方式添加路由
 func (groups *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	if !(len(pattern) > 0 && pattern[0] == '/') {
 		panic("路径必须以 '/'开头！")

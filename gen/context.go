@@ -12,7 +12,7 @@ import (
  * @Description: Context controls all requests and responses
  */
 
-//简化
+// 简化
 type H map[string]interface{}
 
 type Context struct {
@@ -45,41 +45,41 @@ func (c *Context) Fail(code int, err string) {
 	c.tempHTML(code, fmt.Sprintf("<h1>%s<h1>", err))
 }
 
-//根据key获取解析后的参数
+// 根据key获取解析后的参数
 func (c *Context) Param(key string) string {
 	value, _ := c.Params[key]
 	return value
 }
 
-//POST方法的PostForm
+// POST方法的PostForm
 func (c *Context) PostForm(key string) string {
 	return c.Request.FormValue(key)
 }
 
-//GET方法的Query
+// GET方法的Query
 func (c *Context) Query(key string) string {
 	return c.Request.URL.Query().Get(key)
 }
 
-//设置状态码
+// 设置状态码
 func (c *Context) Status(code int) {
 	c.StatusCode = code
 	c.Writer.WriteHeader(code)
 }
 
-//往响应header中添加kv
+// 往响应header中添加kv
 func (c *Context) SetHeader(key string, value string) {
 	c.Writer.Header().Set(key, value)
 }
 
-//String类型返回信息
+// String类型返回信息
 func (c *Context) String(code int, format string, values ...interface{}) {
 	c.SetHeader("Content-type", "text/plain")
 	c.Status(code)
 	c.Writer.Write([]byte(fmt.Sprintf(format, values)))
 }
 
-//JSON类型返回信息
+// JSON类型返回信息
 func (c *Context) JSON(code int, obj interface{}) {
 	c.SetHeader("Content-type", "application/json")
 	c.Status(code)
@@ -90,20 +90,20 @@ func (c *Context) JSON(code int, obj interface{}) {
 	}
 }
 
-//Data类型返回信息
+// Data类型返回信息
 func (c *Context) Data(code int, data []byte) {
 	c.Status(code)
 	c.Writer.Write(data)
 }
 
-//HTML类型返回信息
+// HTML类型返回信息
 func (c *Context) tempHTML(code int, html string) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
 	c.Writer.Write([]byte(html))
 }
 
-//HTML类型返回信息
+// HTML类型返回信息
 func (c *Context) HTML(code int, name string, data interface{}) {
 	c.SetHeader("Content-type", "text/html")
 	c.Status(code)
